@@ -30,6 +30,8 @@ Before running the following commands, you will have to create a folder called *
  ```
 ---
 
+>Note: Don't forget to do not include the text inside these: < >
+
 1. Run this command if you want create the same (or a new) venv
 ```shell
 py -m venv lms <or-the-name-that-you-want>
