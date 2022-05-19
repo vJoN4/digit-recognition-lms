@@ -9,7 +9,6 @@ Here is the link to the MNIST dataset (this was obtained from other site --> Kag
 <br><br>
 
 ## Here are the instalation and use instructions: 
----
 Before running the following commands, you will have to create a folder called **"dataset"** where you will have to unzip the file from the previous link, you don't have to keep all the unzipped folders, you will have to get a file-tree like this
 
 ```
@@ -45,7 +44,7 @@ py -m venv lms <or-the-name-that-you-want>
 deactivate
 ```
 
-3. Then to install the dependencies from the 
+3. Then to install the dependencies from the requirements.txt file
 ```shell
 pip install -r requirements.txt
 ```
