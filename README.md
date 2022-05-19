@@ -38,8 +38,13 @@ py -m venv lms <or-the-name-that-you-want>
 ```
 2. To activate the venv
 ```shell
-py -m venv lms <or-the-name-that-you-chose>
+.\lms <or-the-name-that-you-chose> \Scripts\activate
 ```
+> If you want to close the environment run:
+```shell
+deactivate
+```
+
 3. Then to install the dependencies from the 
 ```shell
 pip install -r requirements.txt
