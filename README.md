@@ -30,7 +30,7 @@ Before running the following commands, you will have to create a folder called *
  ```
 ---
 
->Note: Don't forget to do not include the text inside these: < >
+>Note: Don't forget to do not include the text inside these: < > (including also these characters and spaces)
 
 1. Run this command if you want create the same (or a new) venv
 ```shell
