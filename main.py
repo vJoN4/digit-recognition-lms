@@ -6,10 +6,11 @@ import random
 # ? Sección de constantes
 # * Ruta del folder donde se encuentran las imagenes del dataset
 DATA_PATH = 'dataset/trainingSet'
-IMG_QUANTITY = 5 # ! Valores --> 5 para testing | 50 para entrenamiento
+SAMPLE_PATH = 'dataset/testSample'
+IMG_QUANTITY = 50 # ! Valores --> 5 para testing | 50 para entrenamiento
 
 # ? Configuración de los puntos sobre la imagen
-POINT_QUANTITY = 5 # ! Valores --> 5 para testing | 30 o más para entrenamiento
+POINT_QUANTITY = 30 # ! Valores --> 5 para testing | 30 o más para entrenamiento
 IMG_SIZE = 27 # ? Se maneja solo un valor ya que son imagenes cuadradas de la forma LxL px
 REGION_VALUE = 6 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
 POINT_COLOR = [7, 49, 255] # ! --> Rojo ; Proposito de testing, se eliminara posteriormente
@@ -27,12 +28,11 @@ def generateConfiguration():
 def imageBinarization(img, pointsConfig):
   """
   * Funcion que binariza la imagen
-  * @param img: Imagen a binarizar
+  * @param img: Ruta de la imagen a binarizar
   * @param pointsConfig: Configuracion de los puntos sobre la imagen
   * @return: Imagen binarizada
   """
 
-  # print(img)
   # ? Se inicializa la lista que representará la imagen en formato binario
   binaryIMG = np.zeros((POINT_QUANTITY, ), dtype=int)
   openedImage = cv2.imread(img)
@@ -64,14 +64,19 @@ def readImages(folder, pointsConfig):
         break
   return images
 
-def learningPhase():
+def learningPhase(imgMatrix, AM):
   """
   * Funcion que trabaja sobre la memoria asociativa a partir de las imagenes del dataset
-  * @param 
-  * @return
+  * @param imgMatrix: Lista con las imagenes del dataset
+  * @param AM: Memoria asociativa
+  * @return AM: Memoria asociativa actualizada
   """
 
-  pass
+  for index, imgList in enumerate(imgMatrix):
+    for imgVector in imgList:
+      AM[index] = AM[index] + (2 * np.array(imgVector) - 1)
+
+  return AM
 
 # ! Sección de ejecución ----------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -83,44 +88,39 @@ if __name__ == '__main__':
   pointsConfig = generateConfiguration()
 
   # ? Referencia al método map --> https://realpython.com/python-map-function/
-
+  # * Generando la matriz de imagenes
   imgMatrix = list(map(lambda folder: readImages(folder, pointsConfig), imgFolders))
 
 
   # * Inicializando la memoria asociativa
-  AM = np.zeros((len(imgMatrix) - 1, POINT_QUANTITY), dtype=int)
+  AM = np.zeros((len(imgMatrix), POINT_QUANTITY), dtype=int)
 
 # ? -------------------------------------------------------------------------------------------------------------------------------------
 # ? Test area -> Esta se puede modificar para probar la funcionalidad conforme se vaya avanzando, se eliminará al finalizar el proyecto
 # ? Todo lo que este encima de esta contará como código funcional, es decir, que se procurará no modificarlo
 
-  # print(pointsConfig)
+  print(len(imgMatrix))
 
-  for list in imgMatrix:
-    for bImg in list:
-      print(bImg)
-    print("--------------")
+  # for list in imgMatrix:
+  #   for bImg in list:
+  #     print(bImg)
+  #   print("--------------")
 
   print(AM)
 
-  testImg = cv2.imread(f'{DATA_PATH}/0/img_1.jpg')
+  learningPhase(imgMatrix, AM)
 
-  binarImage = cv2.imread(f'{DATA_PATH}/0/img_1.jpg')
+  print(AM)
 
-  # * Test de como se debería apreciar la configuracion de los puntos sobre la imagen, la img se verá muy pequeña
-  # * Si se quiere apreciar más detalladamente el como se "aplican" los puntos, se puede tomar una screenshot y hacer zoom
+  # ! Test con memoria asociativa generada e imagen "aleatoria"
+  imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_285.jpg', pointsConfig))
 
-  for points in pointsConfig:
-    testImg[points[0], points[1]] = POINT_COLOR
+  x = np.transpose([imgTest])
 
-  # ? Referencia => https://stackoverflow.com/questions/9780632/how-do-i-determine-if-a-color-is-closer-to-white-or-black#:~:text=The%20former%20is%20easy%3A%20convert,closer%20to%20white%20(255).
+  # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
+  y = np.transpose(AM.dot(x))[0]
 
-  for points in pointsConfig:
-    (B, G, R) = binarImage[points[0], points[1]]
-    luminance = .2126*R + 0.7152*G + 0.0722*B
+  print("\n\n----->", np.shape(y))
 
-    print("BLACK" if luminance < 128 else "WHITE")
-
-  cv2.imshow('Testing', testImg)
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+  # print(y)
+  print(np.where(y == np.amax(y))[0][0])
