@@ -108,13 +108,51 @@ def binaryzeAM(classList):
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
-def saveResults(id, AM, pointsConfig, quality):
+def testEfficiencyRate(AM, pointsConfig):
+  """
+  * Funcion que guarda el dataset en un archivo JSON
+  * @param AM: Memoria asociativa
+  * @param pointsConfig: Configuracion de los puntos usada en el dataset
+  * @return: efficiencyRate: Arreglo el porcentaje de calidad de la memoria asociativa
+  """
+  files = os.listdir(f'{SAMPLE_PATH}')
+  correctImgsNum = 0 # * Contador para conocer cuantas imagenes se clasificaron correctamente
+  TEST_IMG_QUANTITY = len(files) # * Cantidad de imagenes a clasificar
+  JSON_CORRECT_IMG = open("correctNumbers.json") # * Archivo JSON que contiene los números de las imagenes correctamente clasificadas
+
+  correctImgs = json.load(JSON_CORRECT_IMG)["sample-numbers"] 
+
+  for index, _ in enumerate(files):
+    imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_{index + 1}.jpg', pointsConfig))
+
+    x = np.transpose([imgTest])
+
+    # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
+    y = np.transpose(AM.dot(x))[0]
+
+    # print(f'{np.where(y == np.amax(y))[0][0]} <--> {correctImgs[index]}')
+
+    estimatedNum = np.where(y == np.amax(y))[0][0]
+    correctNum = correctImgs[index]
+
+    if (estimatedNum == correctNum): 
+      correctImgsNum += 1
+
+  efficiencyRate = correctImgsNum / TEST_IMG_QUANTITY
+
+  # print(f'Eficiencia: {efficiencyRate}')
+  return efficiencyRate
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
+def saveResults(id, AM, pointsConfig, quality, efficiency):
   """
   * Funcion que guarda el dataset en un archivo JSON
   * @param id: Id generado para identificar el archivo generado
   * @param AM: Memoria asociativa
   * @param pointsConfig: Configuracion de los puntos usada en el dataset
   * @param quality: Arreglo con los porcentajes de calidad por clase
+  * @param efficiency: Porcentaje de eficiencia de la memoria asociativa entrenada
   * @return: None
   """
 
@@ -123,9 +161,12 @@ def saveResults(id, AM, pointsConfig, quality):
 
   JSON = {
     'id': id,
+    'pointsQuantity': POINT_QUANTITY,
+    'imageQuantity': IMG_QUANTITY,
     'pointsConfig': pointsConfig,
     'AM': AM.tolist(),
-    'quality': quality.tolist()
+    'quality': quality.tolist(),
+    'efficiency': round((efficiency * 100), 4)
   }
 
   options = jsbeautifier.default_options()
@@ -137,9 +178,9 @@ def saveResults(id, AM, pointsConfig, quality):
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
-
 # ! Sección de ejecución ----------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
+  print("INICIO")
 
   # * Generando ID para el archivo de la memoria asociativa
   ID = str(uuid.uuid4())
@@ -149,65 +190,73 @@ if __name__ == '__main__':
   
   # * Generando la configuracion de los puntos
   pointsConfig = generateConfiguration()
+  print("CONFIGURACIÓN DE LOS PUNTOS GENERADA")
 
   # ? Referencia al método map --> https://realpython.com/python-map-function/
   # * Generando la matriz de imagenes
   imgMatrix = list(map(lambda folder: readImages(folder, pointsConfig), imgFolders))
+  print("MATRIZ DE IMAGENES BINARIZADAS GENERADA")
 
   # * Inicializando la memoria asociativa
   AM = np.zeros((len(imgMatrix), POINT_QUANTITY), dtype=int)
+  print("MEMORIA ASOCIATIVA INICIALIZADA")
 
   # * Entrenando la memoria asociativa
   AM = learningPhase(imgMatrix, AM)
+  print("ENTRENAMIENTO DE LA MEMORIA ASOCIATIVA FINALIZADO")
 
   # # * Caculando calidad de la memoria asociativa
   binaryAM = list(map(binaryzeAM, np.copy(AM)))
   quality = sum(np.transpose(binaryAM)) / POINT_QUANTITY
 
   # * Probando porcentaje de eficiencia de la memoria asociativa
-
+  efficiencyRate = testEfficiencyRate(AM, pointsConfig)
+  print("EFICIENCIA DE LA MEMORIA ASOCIATIVA CALCULADA")
 
   # # * Guardando la memoria asociativa, la configuracion de los puntos y un ID (con proposito de distinguir entre cada entrenamiento)
-  saveResults(ID, AM, pointsConfig, quality)
+  saveResults(ID, AM, pointsConfig, quality, efficiencyRate)
+  print("MEMORIA ASOCIATIVA GUARDADA")
+
+  print("MODELO FINALIZADO")
 
 # ? -------------------------------------------------------------------------------------------------------------------------------------
 # ? Test area -> Esta se puede modificar para probar la funcionalidad conforme se vaya avanzando, se eliminará al finalizar el proyecto
 # ? Todo lo que este encima de esta contará como código funcional, es decir, que se procurará no modificarlo
 
-  TEST_IMG_QUANTITY = 350
+  # TEST_IMG_QUANTITY = 350
 
-  correctImgsNum = 0
+  # correctImgsNum = 0
 
-  JSON_FILE = open(f'{RESULTS_PATH}/AM-299e30c1.json')
+  # JSON_FILE = open(f'{RESULTS_PATH}/AM-299e30c1.json')
 
-  JSON_CORRECT_IMG = open("correctNumbers.json")
+  # JSON_CORRECT_IMG = open("correctNumbers.json")
 
-  correctImgs = json.load(JSON_CORRECT_IMG)
+  # correctImgs = json.load(JSON_CORRECT_IMG)
 
-  data = json.load(JSON_FILE)
+  # data = json.load(JSON_FILE)
 
-  # ! Test con memoria asociativa generada y una porción de las imagenes de sample (10)
-  files = os.listdir(f'{SAMPLE_PATH}')
+  # # ! Test con memoria asociativa generada y una porción de las imagenes de sample (10)
+  # files = os.listdir(f'{SAMPLE_PATH}')
 
-  for index, _ in enumerate(files):
-    imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_{index + 1}.jpg', data["pointsConfig"]))
+  # for index, _ in enumerate(files):
+  #   imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_{index + 1}.jpg', data["pointsConfig"]))
 
-    x = np.transpose([imgTest])
+  #   x = np.transpose([imgTest])
 
-    # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
-    y = np.transpose(np.array(data["AM"]).dot(x))[0]
+  #   # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
+  #   y = np.transpose(np.array(data["AM"]).dot(x))[0]
 
-    # print(y)
+  #   # print(y)
 
-    print(f'{np.where(y == np.amax(y))[0][0]} <--> {correctImgs["sample-numbers"][index]}')
+  #   print(f'{np.where(y == np.amax(y))[0][0]} <--> {correctImgs["sample-numbers"][index]}')
 
-    estimatedNum = np.where(y == np.amax(y))[0][0]
-    correctNum = correctImgs["sample-numbers"][index]
+  #   estimatedNum = np.where(y == np.amax(y))[0][0]
+  #   correctNum = correctImgs["sample-numbers"][index]
 
-    if (estimatedNum == correctNum): 
-      correctImgsNum += 1
+  #   if (estimatedNum == correctNum): 
+  #     correctImgsNum += 1
 
-  efficiencyRate = correctImgsNum / TEST_IMG_QUANTITY
+  # efficiencyRate = correctImgsNum / TEST_IMG_QUANTITY
 
-  print("Aciertos: ", correctImgsNum)
-  print(f'Eficiencia: {efficiencyRate}')
+  # print("Aciertos: ", correctImgsNum)
+  # print(f'Eficiencia: {efficiencyRate}')
