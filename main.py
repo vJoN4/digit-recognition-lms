@@ -169,6 +169,9 @@ def saveResults(id, AM, pointsConfig, quality, efficiency):
   options = jsbeautifier.default_options()
   options.indent_size = 2
 
+  if not os.path.exists(f'./{RESULTS_PATH}'):
+    os.makedirs(f'./{RESULTS_PATH}')
+
   with open(f'{RESULTS_PATH}/AM-{_id}.json', 'w') as outfile:
     # ? Referencia => https://stackoverflow.com/questions/62434326/how-to-pretty-print-json-with-long-array-in-the-same-line
     outfile.write(jsbeautifier.beautify(json.dumps(JSON), options))
