@@ -228,10 +228,13 @@ HELP_MENU = str(
 def getFirstArgCondition(args): return args[0] >= 1
 def getSecondArgCondition(args): return (args[1] >= 1 and args[1] <= 100)
 
-def getHelp(_):
-  print(HELP_MENU)
+def cancelProcess():
   global am_gen_quantity 
   am_gen_quantity = 0
+
+def getHelp(_):
+  print(HELP_MENU)
+  cancelProcess()
 
 def genAM(args):
   if (getFirstArgCondition(args)):
@@ -239,6 +242,7 @@ def genAM(args):
     am_gen_quantity = args[0]
   else:
     print("ERROR: Argumento invalido, verifique la ayuda con --help")
+    cancelProcess()
 
 def genAM_IMG(args):
   if (getFirstArgCondition(args) and getSecondArgCondition(args)):
@@ -247,6 +251,7 @@ def genAM_IMG(args):
     img_quantity = args[1]
   else:
     print("ERROR: Argumentos invalidos, verifique la ayuda con --help")
+    cancelProcess()
 
 def genAM_IMG_POINTS(args):
   if (getFirstArgCondition(args) and getSecondArgCondition(args) and args[2] >= 1):
@@ -256,6 +261,7 @@ def genAM_IMG_POINTS(args):
     point_quantity = args[2]
   else:
     print("ERROR: Argumentos invalidos, verifique la ayuda con --help")
+    cancelProcess()
 
 ARGS_MENU = {
   "0" : getHelp,
