@@ -2,18 +2,25 @@ import os
 import cv2
 import numpy as np
 import random
+import uuid
+import json
+import jsbeautifier
 
-# ? Sección de constantes
-# * Ruta del folder donde se encuentran las imagenes del dataset
-DATA_PATH = 'dataset/trainingSet'
-SAMPLE_PATH = 'dataset/testSample'
-IMG_QUANTITY = 50 # ! Valores --> 5 para testing | 50 para entrenamiento
+# ? SECCIÓN DE CONSTANTES
+
+# ! RUTAS
+DATA_PATH = 'dataset/trainingSet' # * Ruta del folder donde se encuentran las imagenes del dataset para entrenamiento
+SAMPLE_PATH = 'dataset/testSample'# * Ruta del folder para las imagenes de testing / ejecución
+RESULTS_PATH = 'results' # * Ruta del folder donde se guardaran los archivos con los resultados de cada entrenamiento
 
 # ? Configuración de los puntos sobre la imagen
-POINT_QUANTITY = 30 # ! Valores --> 5 para testing | 30 o más para entrenamiento
+IMG_QUANTITY = 100 # ! Valores --> 5 para testing | 50 para entrenamiento
+POINT_QUANTITY = 50 # ! Valores --> 5 para testing | 30 o más para entrenamiento
 IMG_SIZE = 27 # ? Se maneja solo un valor ya que son imagenes cuadradas de la forma LxL px
-REGION_VALUE = 6 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
+REGION_VALUE = 5 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
 POINT_COLOR = [7, 49, 255] # ! --> Rojo ; Proposito de testing, se eliminara posteriormente
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
 def generateConfiguration():
   """
@@ -24,6 +31,8 @@ def generateConfiguration():
   for i in range(POINT_QUANTITY):
     config.append([random.randint(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE), random.randint(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE)])
   return config
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
 def imageBinarization(img, pointsConfig):
   """
@@ -47,6 +56,8 @@ def imageBinarization(img, pointsConfig):
 
   return binaryIMG
 
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
 def readImages(folder, pointsConfig):
   """
   * Funcion que lee las imagenes del dataset y dependiendo de la cantidad de imagenes que se desea, retorna una lista con la longitud establecida
@@ -64,6 +75,8 @@ def readImages(folder, pointsConfig):
         break
   return images
 
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
 def learningPhase(imgMatrix, AM):
   """
   * Funcion que trabaja sobre la memoria asociativa a partir de las imagenes del dataset
@@ -78,8 +91,58 @@ def learningPhase(imgMatrix, AM):
 
   return AM
 
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
+def binaryzeAM(classList):
+  """
+  * Funcion que binariza cada 'lista' de la matriz asociativa entrenada
+  * @param classList: Lista con los valores de la matriz asociativa entrenada
+  * @return: tmpList: Lista con los valores binarizados de la matriz asociativa entrenada
+  """
+
+  tmpList = []
+  for value in classList:
+    tmpList.append(0 if value == 0 else 1)
+
+  return np.array(tmpList)
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
+def saveResults(id, AM, pointsConfig, quality):
+  """
+  * Funcion que guarda el dataset en un archivo JSON
+  * @param id: Id generado para identificar el archivo generado
+  * @param AM: Memoria asociativa
+  * @param pointsConfig: Configuracion de los puntos usada en el dataset
+  * @param quality: Arreglo con los porcentajes de calidad por clase
+  * @return: None
+  """
+
+  # ? Referencia => https://www.pythontutorial.net/python-basics/python-unpack-list/
+  _id, *_ = id.split('-')
+
+  JSON = {
+    'id': id,
+    'pointsConfig': pointsConfig,
+    'AM': AM.tolist(),
+    'quality': quality.tolist()
+  }
+
+  options = jsbeautifier.default_options()
+  options.indent_size = 2
+
+  with open(f'{RESULTS_PATH}/AM-{_id}.json', 'w') as outfile:
+    # ? Referencia => https://stackoverflow.com/questions/62434326/how-to-pretty-print-json-with-long-array-in-the-same-line
+    outfile.write(jsbeautifier.beautify(json.dumps(JSON), options))
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 # ! Sección de ejecución ----------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
+
+  # * Generando ID para el archivo de la memoria asociativa
+  ID = str(uuid.uuid4())
 
   # * Consiguiendo la lista de folders para cada tipo de imagen, i.e cada digito
   imgFolders = os.listdir(DATA_PATH)
@@ -91,36 +154,60 @@ if __name__ == '__main__':
   # * Generando la matriz de imagenes
   imgMatrix = list(map(lambda folder: readImages(folder, pointsConfig), imgFolders))
 
-
   # * Inicializando la memoria asociativa
   AM = np.zeros((len(imgMatrix), POINT_QUANTITY), dtype=int)
+
+  # * Entrenando la memoria asociativa
+  AM = learningPhase(imgMatrix, AM)
+
+  # # * Caculando calidad de la memoria asociativa
+  binaryAM = list(map(binaryzeAM, np.copy(AM)))
+  quality = sum(np.transpose(binaryAM)) / POINT_QUANTITY
+
+  # * Probando porcentaje de eficiencia de la memoria asociativa
+
+
+  # # * Guardando la memoria asociativa, la configuracion de los puntos y un ID (con proposito de distinguir entre cada entrenamiento)
+  saveResults(ID, AM, pointsConfig, quality)
 
 # ? -------------------------------------------------------------------------------------------------------------------------------------
 # ? Test area -> Esta se puede modificar para probar la funcionalidad conforme se vaya avanzando, se eliminará al finalizar el proyecto
 # ? Todo lo que este encima de esta contará como código funcional, es decir, que se procurará no modificarlo
 
-  print(len(imgMatrix))
+  TEST_IMG_QUANTITY = 350
 
-  # for list in imgMatrix:
-  #   for bImg in list:
-  #     print(bImg)
-  #   print("--------------")
+  correctImgsNum = 0
 
-  print(AM)
+  JSON_FILE = open(f'{RESULTS_PATH}/AM-299e30c1.json')
 
-  learningPhase(imgMatrix, AM)
+  JSON_CORRECT_IMG = open("correctNumbers.json")
 
-  print(AM)
+  correctImgs = json.load(JSON_CORRECT_IMG)
 
-  # ! Test con memoria asociativa generada e imagen "aleatoria"
-  imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_285.jpg', pointsConfig))
+  data = json.load(JSON_FILE)
 
-  x = np.transpose([imgTest])
+  # ! Test con memoria asociativa generada y una porción de las imagenes de sample (10)
+  files = os.listdir(f'{SAMPLE_PATH}')
 
-  # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
-  y = np.transpose(AM.dot(x))[0]
+  for index, _ in enumerate(files):
+    imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_{index + 1}.jpg', data["pointsConfig"]))
 
-  print("\n\n----->", np.shape(y))
+    x = np.transpose([imgTest])
 
-  # print(y)
-  print(np.where(y == np.amax(y))[0][0])
+    # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
+    y = np.transpose(np.array(data["AM"]).dot(x))[0]
+
+    # print(y)
+
+    print(f'{np.where(y == np.amax(y))[0][0]} <--> {correctImgs["sample-numbers"][index]}')
+
+    estimatedNum = np.where(y == np.amax(y))[0][0]
+    correctNum = correctImgs["sample-numbers"][index]
+
+    if (estimatedNum == correctNum): 
+      correctImgsNum += 1
+
+  efficiencyRate = correctImgsNum / TEST_IMG_QUANTITY
+
+  print("Aciertos: ", correctImgsNum)
+  print(f'Eficiencia: {efficiencyRate}')
