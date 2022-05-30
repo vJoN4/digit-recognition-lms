@@ -18,7 +18,7 @@ IMG_QUANTITY = 100 # ! Valores --> 5 para testing | 50 para entrenamiento
 POINT_QUANTITY = 50 # ! Valores --> 5 para testing | 30 o más para entrenamiento
 IMG_SIZE = 27 # ? Se maneja solo un valor ya que son imagenes cuadradas de la forma LxL px
 REGION_VALUE = 5 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
-POINT_COLOR = [7, 49, 255] # ! --> Rojo ; Proposito de testing, se eliminara posteriormente
+POINT_COLOR = [7, 49, 255] # ! --> Rojo ; Proposito de testing
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -130,8 +130,6 @@ def testEfficiencyRate(AM, pointsConfig):
     # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
     y = np.transpose(AM.dot(x))[0]
 
-    # print(f'{np.where(y == np.amax(y))[0][0]} <--> {correctImgs[index]}')
-
     estimatedNum = np.where(y == np.amax(y))[0][0]
     correctNum = correctImgs[index]
 
@@ -140,7 +138,6 @@ def testEfficiencyRate(AM, pointsConfig):
 
   efficiencyRate = correctImgsNum / TEST_IMG_QUANTITY
 
-  # print(f'Eficiencia: {efficiencyRate}')
   return efficiencyRate
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -178,7 +175,7 @@ def saveResults(id, AM, pointsConfig, quality, efficiency):
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
-# ! Sección de ejecución ----------------------------------------------------------------------------------------------------
+# ! Sección de ejecución -----------------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
   print("INICIO")
 
@@ -218,45 +215,3 @@ if __name__ == '__main__':
   print("MEMORIA ASOCIATIVA GUARDADA")
 
   print("MODELO FINALIZADO")
-
-# ? -------------------------------------------------------------------------------------------------------------------------------------
-# ? Test area -> Esta se puede modificar para probar la funcionalidad conforme se vaya avanzando, se eliminará al finalizar el proyecto
-# ? Todo lo que este encima de esta contará como código funcional, es decir, que se procurará no modificarlo
-
-  # TEST_IMG_QUANTITY = 350
-
-  # correctImgsNum = 0
-
-  # JSON_FILE = open(f'{RESULTS_PATH}/AM-299e30c1.json')
-
-  # JSON_CORRECT_IMG = open("correctNumbers.json")
-
-  # correctImgs = json.load(JSON_CORRECT_IMG)
-
-  # data = json.load(JSON_FILE)
-
-  # # ! Test con memoria asociativa generada y una porción de las imagenes de sample (10)
-  # files = os.listdir(f'{SAMPLE_PATH}')
-
-  # for index, _ in enumerate(files):
-  #   imgTest = np.array(imageBinarization(f'{SAMPLE_PATH}/img_{index + 1}.jpg', data["pointsConfig"]))
-
-  #   x = np.transpose([imgTest])
-
-  #   # ? Referencia: https://www.statology.org/operands-could-not-be-broadcast-together-with-shapes/
-  #   y = np.transpose(np.array(data["AM"]).dot(x))[0]
-
-  #   # print(y)
-
-  #   print(f'{np.where(y == np.amax(y))[0][0]} <--> {correctImgs["sample-numbers"][index]}')
-
-  #   estimatedNum = np.where(y == np.amax(y))[0][0]
-  #   correctNum = correctImgs["sample-numbers"][index]
-
-  #   if (estimatedNum == correctNum): 
-  #     correctImgsNum += 1
-
-  # efficiencyRate = correctImgsNum / TEST_IMG_QUANTITY
-
-  # print("Aciertos: ", correctImgsNum)
-  # print(f'Eficiencia: {efficiencyRate}')
