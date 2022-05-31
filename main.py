@@ -123,7 +123,7 @@ def testEfficiencyRate(AM, pointsConfig):
   * Funcion que guarda el dataset en un archivo JSON
   * @param AM: Memoria asociativa
   * @param pointsConfig: Configuracion de los puntos usada en el dataset
-  * @return: efficiencyRate: Arreglo el porcentaje de calidad de la memoria asociativa
+  * @return: efficiencyRate: Porcentaje de efectividad del entrenamiento
   """
   files = os.listdir(f'{SAMPLE_PATH}')
   correctImgsNum = 0 # * Contador para conocer cuantas imagenes se clasificaron correctamente
@@ -317,17 +317,3 @@ if __name__ == '__main__':
     print("ENTRENANDO MEMORIA ASOCIATIVA")
     failureCount = main()
     getResults()
-
-# ? --------------------------------------------------------------------------------------------------------------------------------------------------
-# ! TEST
-
-  # pointsConfig = generateConfiguration()
-
-  # testImg = cv2.imread(f'{DATA_PATH}/2/img_16.jpg')
-
-  # for points in pointsConfig:
-  #   testImg[points[0], points[1]] = POINT_COLOR
-
-  # cv2.imshow('Testing', testImg)
-  # cv2.waitKey(0)
-  # cv2.destroyAllWindows()
