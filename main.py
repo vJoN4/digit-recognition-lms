@@ -15,12 +15,15 @@ SAMPLE_PATH = 'dataset/testSample'# * Ruta del folder para las imagenes de testi
 RESULTS_PATH = 'results' # * Ruta del folder donde se guardaran los archivos con los resultados de cada entrenamiento
 
 # ? Configuración de los puntos sobre la imagen
-am_gen_quantity = 1
-img_quantity = 100 # ! Valores --> 5 para testing | 50 para entrenamiento
-point_quantity = 50 # ! Valores --> 5 para testing | 30 o más para entrenamiento
+am_gen_quantity = 1 # ! Cantidad de memorias asociativas que se desea generar
+img_quantity = 100
+point_quantity = 230 # ! Puntos máximo 28 x 28 --> 784
 IMG_SIZE = 27 # ? Se maneja solo un valor ya que son imagenes cuadradas de la forma LxL px
-REGION_VALUE = 5 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
+REGION_VALUE = 4 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
 POINT_COLOR = [7, 49, 255] # ! --> Rojo ; Proposito de testing
+
+# ? Entrenamiento
+EXPECTED_EFFICIENCY = 0.67
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -31,7 +34,12 @@ def generateConfiguration():
   """
   config = []
   for i in range(point_quantity):
-    config.append([random.randint(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE), random.randint(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE)])
+    config.append(
+      [
+        random.randint(0 + REGION_VALUE, IMG_SIZE - 2),  # ? Posiciones X
+        random.randint(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE)   # ? Posiciones Y
+      ]
+    )
   return config
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -180,36 +188,52 @@ def saveResults(id, AM, pointsConfig, quality, efficiency):
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
-def main():
+def main(loop = 1):
+  """
+  * Funcion que se encarga de realizar el proceso completo de entrenamiento, desde la generación de puntos, hasta conseguir la memoria asociativa
+  * @param loop: Cantidad de memorias asociativas a generar, que cumplan con el criterio de calidad definido por EXPECTED_EFFICIENCY
+  * @return: failureProcess : Cntidad de memorias asociativas que no cumplieron con el criterio de calidad definido por EXPECTED_EFFICIENCY
+  """
 
-  # * Generando ID para el archivo de la memoria asociativa
-  ID = str(uuid.uuid4())
+  countProcess = 0
+  failedProcess = 0
+  while(countProcess < loop):
+    # * Generando ID para el archivo de la memoria asociativa
+    ID = str(uuid.uuid4())
 
-  # * Consiguiendo la lista de folders para cada tipo de imagen, i.e cada digito
-  imgFolders = os.listdir(DATA_PATH)
-  
-  # * Generando la configuracion de los puntos
-  pointsConfig = generateConfiguration()
+    # * Consiguiendo la lista de folders para cada tipo de imagen, i.e cada digito
+    imgFolders = os.listdir(DATA_PATH)
+    
+    # * Generando la configuracion de los puntos
+    pointsConfig = generateConfiguration()
 
-  # ? Referencia al método map --> https://realpython.com/python-map-function/
-  # * Generando la matriz de imagenes
-  imgMatrix = list(map(lambda folder: readImages(folder, pointsConfig), imgFolders))
+    # ? Referencia al método map --> https://realpython.com/python-map-function/
+    # * Generando la matriz de imagenes
+    imgMatrix = list(map(lambda folder: readImages(folder, pointsConfig), imgFolders))
 
-  # * Inicializando la memoria asociativa
-  AM = np.zeros((len(imgMatrix), point_quantity), dtype=int)
+    # * Inicializando la memoria asociativa
+    AM = np.zeros((len(imgMatrix), point_quantity), dtype=int)
 
-  # * Entrenando la memoria asociativa
-  AM = learningPhase(imgMatrix, AM)
+    # * Entrenando la memoria asociativa
+    AM = learningPhase(imgMatrix, AM)
 
-  # # * Caculando calidad de la memoria asociativa
-  binaryAM = list(map(binaryzeAM, np.copy(AM)))
-  quality = sum(np.transpose(binaryAM)) / point_quantity
+    # # * Caculando calidad de la memoria asociativa
+    binaryAM = list(map(binaryzeAM, np.copy(AM)))
+    quality = sum(np.transpose(binaryAM)) / point_quantity
 
-  # * Probando porcentaje de eficiencia de la memoria asociativa
-  efficiencyRate = testEfficiencyRate(AM, pointsConfig)
+    # * Probando porcentaje de eficiencia de la memoria asociativa
+    efficiencyRate = testEfficiencyRate(AM, pointsConfig)
 
-  # # * Guardando la memoria asociativa, la configuracion de los puntos y un ID (con proposito de distinguir entre cada entrenamiento)
-  saveResults(ID, AM, pointsConfig, quality, efficiencyRate)
+    if (efficiencyRate > EXPECTED_EFFICIENCY):
+      # * Guardando la memoria asociativa, la configuracion de los puntos y un ID (con proposito de distinguir entre cada entrenamiento)
+      print("\n\n Memoria asociativa encontrada con exito \n\n")
+      saveResults(ID, AM, pointsConfig, quality, efficiencyRate)
+      countProcess += 1
+    else: 
+      print(f"Entrenamiento no satisfactorio --> Eficiencia del: {efficiencyRate}")
+      failedProcess += 1
+    
+  return failedProcess
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -273,6 +297,9 @@ ARGS_MENU = {
 # ! Sección de ejecución -----------------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 
+  def getResults():
+    print(F"PROCESO TERMINADO, TARDÓ {failureCount} INTENTOS EN CONSEGUIR {am_gen_quantity} MEMORIAS ASOCIATIVAS SATISFACTORIAS")
+
   args = sys.argv[1:]
   nArgs = len(args)
 
@@ -284,11 +311,23 @@ if __name__ == '__main__':
 
   if (am_gen_quantity > 1): 
     print("ENTRENANDO MEMORIAS ASOCIATIVAS SOLICITADAS")
-    for i in range(am_gen_quantity):
-      main()
-      print(".......")
-    print("PROCESO TERMINADO")
+    failureCount = main(am_gen_quantity)
+    getResults()
   elif (am_gen_quantity == 1):
     print("ENTRENANDO MEMORIA ASOCIATIVA")
-    main()
-    print("PROCESO TERMINADO")
+    failureCount = main()
+    getResults()
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+# ! TEST
+
+  # pointsConfig = generateConfiguration()
+
+  # testImg = cv2.imread(f'{DATA_PATH}/2/img_16.jpg')
+
+  # for points in pointsConfig:
+  #   testImg[points[0], points[1]] = POINT_COLOR
+
+  # cv2.imshow('Testing', testImg)
+  # cv2.waitKey(0)
+  # cv2.destroyAllWindows()
