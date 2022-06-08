@@ -33,11 +33,11 @@ def generateConfiguration():
   * @return: Lista con las configuraciones de los puntos
   """
   config = []
-  for i in range(point_quantity):
+  for _ in range(point_quantity):
     config.append(
       [
-        random.randint(0 + REGION_VALUE, IMG_SIZE - 2),  # ? Posiciones X
-        random.randint(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE)   # ? Posiciones Y
+        int(random.uniform(0 + REGION_VALUE, IMG_SIZE - 2)),  # ? Posiciones X
+        int(random.uniform(0 + REGION_VALUE, IMG_SIZE - REGION_VALUE))   # ? Posiciones Y
       ]
     )
   return config
