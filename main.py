@@ -17,13 +17,22 @@ RESULTS_PATH = 'results' # * Ruta del folder donde se guardaran los archivos con
 # ? Configuración de los puntos sobre la imagen
 am_gen_quantity = 1 # ! Cantidad de memorias asociativas que se desea generar
 img_quantity = 100
-point_quantity = 230 # ! Puntos máximo 28 x 28 --> 784
+point_quantity = 230 # ! Puntos máximo 28 x 28 --> 784 | La cantidad elegida representa un 30% del total de pixeles sobre la imagen
 IMG_SIZE = 27 # ? Se maneja solo un valor ya que son imagenes cuadradas de la forma LxL px
 REGION_VALUE = 4 # ? Valor que maneja la distancia hacia dentro de la imagen considerada como región de interes
 POINT_COLOR = [7, 49, 255] # ! --> Rojo ; Proposito de testing
 
 # ? Entrenamiento
+# * NOTA: 
+# ! Estos valores fueron escogidos 'arbitrariamente', basados en los resultados obtenidos a través de pruebas previas
+# ! Por lo tanto no se pueden manejar como valores absolutos para todos los casos de uso
+# ! Dado lo anterior dicho, estos valores se dejan como constantes que se pueden modificar en caso de necesitarlo
 EXPECTED_EFFICIENCY = 0.67
+EXPECTED_BALANCE = 0.75
+REST_VALUE = 10 # ? Constante que realizará el ajuste necesario sobre el valor de eficiencia esperada
+
+# ! Si se introducen parametros personalizados
+change_expected_efficiency = False # ? Esta bandera se cambiará en caso de recibir dos o más parametros al momento de ejecución
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -84,6 +93,30 @@ def readImages(folder, pointsConfig):
       else:
         break
   return images
+
+# ? --------------------------------------------------------------------------------------------------------------------------------------------------
+
+def balanceMatrix(imgMatrix):
+  """
+  * Funcion que balancea la matriz de imagenes binarizadas
+  * @param imgMatrix: Matriz de imagenes binarizadas
+  * @return: balanceRate: Porcejnto de balance de la matriz (Se espera sea del 0.50)
+  """
+  
+  # * Se usa una copia de la matriz para no modificar la original
+  tmpImgMatrix = imgMatrix.copy()
+
+  for extIndex, aList in enumerate(tmpImgMatrix):
+    for index, innerList in enumerate(aList):
+      tmpImgMatrix[extIndex][index] = innerList.tolist()
+
+  tmpImgMatrix = np.array(tmpImgMatrix)
+
+  matrixToArray = tmpImgMatrix.flatten()
+
+  balanceRate = sum(matrixToArray == 0) / len(matrixToArray)
+
+  return balanceRate
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -214,25 +247,32 @@ def main(loop = 1):
     # * Inicializando la memoria asociativa
     AM = np.zeros((len(imgMatrix), point_quantity), dtype=int)
 
-    # * Entrenando la memoria asociativa
-    AM = learningPhase(imgMatrix, AM)
+    # * Calculando el valor de balanceo de la matriz de imagenes binarizadas
+    balance = balanceMatrix(imgMatrix)
 
-    # # * Caculando calidad de la memoria asociativa
-    binaryAM = list(map(binaryzeAM, np.copy(AM)))
-    quality = sum(np.transpose(binaryAM)) / point_quantity
+    if (balance <= EXPECTED_BALANCE):
 
-    # * Probando porcentaje de eficiencia de la memoria asociativa
-    efficiencyRate = testEfficiencyRate(AM, pointsConfig)
+      # * Entrenando la memoria asociativa
+      AM = learningPhase(imgMatrix, AM)
 
-    if (efficiencyRate > EXPECTED_EFFICIENCY):
-      # * Guardando la memoria asociativa, la configuracion de los puntos y un ID (con proposito de distinguir entre cada entrenamiento)
-      print("\n\n Memoria asociativa encontrada con exito \n\n")
-      saveResults(ID, AM, pointsConfig, quality, efficiencyRate)
-      countProcess += 1
-    else: 
-      print(f"Entrenamiento no satisfactorio --> Eficiencia del: {efficiencyRate}")
-      failedProcess += 1
-    
+      # # * Caculando calidad de la memoria asociativa
+      binaryAM = list(map(binaryzeAM, np.copy(AM)))
+      quality = sum(np.transpose(binaryAM)) / point_quantity
+
+      # * Probando porcentaje de eficiencia de la memoria asociativa
+      efficiencyRate = testEfficiencyRate(AM, pointsConfig)
+
+      if (efficiencyRate > EXPECTED_EFFICIENCY if not change_expected_efficiency else efficiencyRate > (EXPECTED_EFFICIENCY - REST_VALUE)):
+        # * Guardando la memoria asociativa, la configuracion de los puntos y un ID (con proposito de distinguir entre cada entrenamiento)
+        print("\n\n Memoria asociativa encontrada con exito \n\n")
+        saveResults(ID, AM, pointsConfig, quality, efficiencyRate)
+        countProcess += 1
+      else: 
+        print(f"Entrenamiento no satisfactorio --> Eficiencia del: {efficiencyRate} \t Esperado: {EXPECTED_EFFICIENCY}")
+        failedProcess += 1
+    else:
+      print(f"Balanceo no satisfactorio --> Valor del: {balance} \t Esperado: {EXPECTED_BALANCE}")
+
   return failedProcess
 
 # ? --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -270,19 +310,21 @@ def genAM(args):
 
 def genAM_IMG(args):
   if (getFirstArgCondition(args) and getSecondArgCondition(args)):
-    global am_gen_quantity,img_quantity
+    global am_gen_quantity,img_quantity, change_expected_efficiency
     am_gen_quantity = args[0]
     img_quantity = args[1]
+    change_expected_efficiency = True
   else:
     print("ERROR: Argumentos invalidos, verifique la ayuda con --help")
     cancelProcess()
 
 def genAM_IMG_POINTS(args):
   if (getFirstArgCondition(args) and getSecondArgCondition(args) and args[2] >= 1):
-    global am_gen_quantity,img_quantity,point_quantity
+    global am_gen_quantity,img_quantity,point_quantity, change_expected_efficiency
     am_gen_quantity = args[0]
     img_quantity = args[1]
     point_quantity = args[2]
+    change_expected_efficiency = True
   else:
     print("ERROR: Argumentos invalidos, verifique la ayuda con --help")
     cancelProcess()
