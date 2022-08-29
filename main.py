@@ -153,7 +153,7 @@ def binaryzeAM(classList):
 
 def testEfficiencyRate(AM, pointsConfig):
   """
-  * Funcion que guarda el dataset en un archivo JSON
+  * Funcion que calcula la tasa de eficiencia del modelo
   * @param AM: Memoria asociativa
   * @param pointsConfig: Configuracion de los puntos usada en el dataset
   * @return: efficiencyRate: Porcentaje de efectividad del entrenamiento
