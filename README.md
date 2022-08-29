@@ -1,6 +1,6 @@
-# Installation / Usage Instructions
+# Introduction
 
-This project was made using python virtual environments (venv), so if you want to clone and use this repository you will have to create a venv for this repo (you can name it as you want, but if you want to ignore the created files by the environment in the repo, you will have to change the .gitignore file, or you can use the same that we used --> **'lms'**), and then you'll have to install the dependencies, these are in the requirements.txt file
+This project was made using python virtual environments (venv), so if you want to clone and use this repository you will have to create a venv (you can name it as you want, but if you want to ignore the created files by the environment in the repo, you'll have to change the .gitignore file, or you can use the same that we used --> **'lms'**), and then you'll have to install the dependencies, these are in the requirements.txt file
 
 <br>
 Here is the link to the MNIST dataset (this was obtained from other site --> Kaggle, to get more control over the images from the dataset): 
@@ -8,7 +8,8 @@ Here is the link to the MNIST dataset (this was obtained from other site --> Kag
 [MNIST as .jpg](https://www.kaggle.com/datasets/scolianni/mnistasjpg) 
 <br><br>
 
-## Here are the instalation and use instructions: 
+## Installation / Usage Instructions
+
 Before running the following commands, you will have to create a folder called **"dataset"** where you will have to unzip the file from the previous link, you don't have to keep all the unzipped folders, you will have to get a file-tree like this
 
 ```
